@@ -24,6 +24,12 @@ export function Header() {
           >
             Repetitorlar
           </a>
+          <a
+            href="#faq"
+            className="text-sm font-medium text-slate-600 transition-colors hover:text-slate-900"
+          >
+            Savollar
+          </a>
         </nav>
 
         <a
