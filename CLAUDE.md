@@ -30,6 +30,7 @@ Hozircha test frameworki ulanmagan.
 - `layout.tsx` va `page.tsx` App Router talabiga ko'ra `default export` bilan yakunlanadi, lekin ichkarida named function sifatida yoziladi (konvensiyaga moslash uchun).
 - ESLint: `eslint.config.mjs` `eslint-config-next`ning flat config eksportini **to'g'ridan-to'g'ri** import qiladi (`import nextConfig from "eslint-config-next"`). `@eslint/eslintrc`ning `FlatCompat` orqali `.extends(...)` qilish bilan urinma — `eslint-config-next@16` allaqachon flat config formatida va bu ikkalasini aralashtirish `TypeError: Converting circular structure to JSON` xatosini beradi.
 - Asosiy aksent rang — `emerald` (Tailwind). Yangi interaktiv elementlar (tugmalar, havolalar, belgilar) shu rangga mos bo'lishi kerak, boshqa rang tanlanmasa.
+- `bot/` — grammY asosidagi Telegram bot (`bot/src/index.ts`), asosiy Next.js ilovadan **butunlay mustaqil**: o'z `package.json`, o'z `.env` (`BOT_TOKEN`, `BOOKING_URL`), o'z `.gitignore`i bor. Root buyruqlari (`npm run dev`/`build`) unga tegmaydi — ishga tushirish uchun `cd bot && npm install && npm run dev`.
 
 ## Konvensiyalar
 - TypeScript strict mode
