@@ -1,5 +1,6 @@
 import "dotenv/config";
-import { Bot } from "grammy";
+import { Bot, Context, InlineKeyboard, session, SessionFlavor } from "grammy";
+import { editAnnouncement, writeAnnouncement } from "./gemini";
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 if (!BOT_TOKEN) {
@@ -8,7 +9,24 @@ if (!BOT_TOKEN) {
 
 const BOOKING_URL = process.env.BOOKING_URL || "https://tilbron.vercel.app/";
 
-const bot = new Bot(BOT_TOKEN);
+interface SessionData {
+  pendingRawText?: string;
+}
+
+type MyContext = Context & SessionFlavor<SessionData>;
+
+const bot = new Bot<MyContext>(BOT_TOKEN);
+
+bot.use(session({ initial: (): SessionData => ({}) }));
+
+const reviewKeyboard = new InlineKeyboard()
+  .text("✅ Tasdiqlash", "tasdiqlash")
+  .text("✏️ Qayta yoz", "qayta_yoz");
+
+async function runPipeline(rawText: string): Promise<string> {
+  const draft = await writeAnnouncement(rawText);
+  return editAnnouncement(rawText, draft);
+}
 
 bot.command("start", (ctx) => {
   ctx.reply(
@@ -20,7 +38,7 @@ bot.command("start", (ctx) => {
   );
 });
 
-bot.command("elon", (ctx) => {
+bot.command("elon", async (ctx) => {
   const matn = ctx.match.trim();
 
   if (!matn) {
@@ -28,7 +46,38 @@ bot.command("elon", (ctx) => {
     return;
   }
 
-  ctx.reply(`🎓 Yangi repetitor TilBron'da!\n${matn}\nBron qilish: ${BOOKING_URL}`);
+  ctx.session.pendingRawText = matn;
+
+  await ctx.replyWithChatAction("typing");
+  const yakuniyMatn = await runPipeline(matn);
+
+  await ctx.reply(
+    `🎓 Yangi repetitor TilBron'da!\n${yakuniyMatn}\nBron qilish: ${BOOKING_URL}`,
+    { reply_markup: reviewKeyboard }
+  );
+});
+
+bot.callbackQuery("tasdiqlash", async (ctx) => {
+  await ctx.editMessageText("Tasdiqlandi, kanalga tayyor ✅");
+  await ctx.answerCallbackQuery();
+});
+
+bot.callbackQuery("qayta_yoz", async (ctx) => {
+  const matn = ctx.session.pendingRawText;
+
+  if (!matn) {
+    await ctx.answerCallbackQuery("Xomaki matn topilmadi, /elon bilan qaytadan boshlang.");
+    return;
+  }
+
+  await ctx.answerCallbackQuery("Qayta yozilmoqda...");
+  await ctx.replyWithChatAction("typing");
+  const yakuniyMatn = await runPipeline(matn);
+
+  await ctx.editMessageText(
+    `🎓 Yangi repetitor TilBron'da!\n${yakuniyMatn}\nBron qilish: ${BOOKING_URL}`,
+    { reply_markup: reviewKeyboard }
+  );
 });
 
 bot.catch((err) => {
